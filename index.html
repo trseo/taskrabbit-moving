@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Taskrabbit moving calculator v4: Start Over on every step + per-job task descriptions -->
+<!-- Taskrabbit moving calculator v5: Back (green) left, Start Over (grey) right, per-job task descriptions -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -59,7 +59,7 @@ button{font:inherit;color:inherit}
 .opt[aria-pressed="true"] .sub{color:var(--pampas)}
 
 /* ---------- Nav + buttons ---------- */
-.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:24px;min-height:48px}
+.nav{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-top:24px}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border-radius:999px;border:0;cursor:pointer;font-weight:700;text-decoration:none;line-height:1}
 .btn-primary{background:var(--agave);color:var(--pampas)}
 .btn-primary:hover{background:var(--agave-dark)}
@@ -89,8 +89,10 @@ button{font:inherit;color:inherit}
 .addon small{display:block;color:var(--ink-soft);font-size:14px;line-height:1.3;margin-top:2px}
 .addon a{flex:none;font-weight:700;color:var(--agave);text-decoration:none;padding:10px 4px}
 .addon a:hover{color:var(--monstera);text-decoration:underline}
-.nav-left{display:flex;align-items:center;gap:4px}
-.btn-quiet{color:var(--ink-soft)}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+/* Neutral grey for Start Over (not a brand colour; kept quiet so the green stays dominant) */
+.btn-gray{background:#E4E7E5;color:var(--monstera)}
+.btn-gray:hover{background:#D3D8D5}
 .btn-outline{background:transparent;color:var(--agave);border:2px solid var(--agave)}
 .btn-outline:hover{background:var(--agave);color:var(--pampas)}
 .btn-outline-light{background:transparent;color:var(--pampas);border:2px solid var(--pampas)}
@@ -132,7 +134,7 @@ button{font:inherit;color:inherit}
    CONFIG — everything you'll want to edit lives here.
    ========================================================= */
 var CONFIG = {
-  version: "4",
+  version: "5",
   defaultMarket: "en-US",
   // Autofill: if the booking flow accepts a URL parameter for the task description,
   // put its name here (e.g. "description") and every Book a Tasker link will carry
@@ -344,10 +346,13 @@ var QUESTIONS = [
               (o.sub ? '<span class="sub">' + esc(t(q.id + "." + o.id + ".sub", o.sub)) + "</span>" : "") + "</span></button>";
     });
     html += "</div>";
-    html += '<div class="nav">' +
-      (history.length ? '<div class="nav-left"><button type="button" class="btn btn-ghost" data-act="back">← ' + C.back + '</button><button type="button" class="btn btn-ghost btn-quiet" data-act="restart">' + C.restart + "</button></div>" : "<span></span>") +
-      (multi ? '<button type="button" class="btn btn-primary" data-act="next"' + ((sel && sel.length) ? "" : " disabled") + ">" + C.next + "</button>" : "") +
-      "</div>";
+    var backBtn = '<button type="button" class="btn btn-primary" data-act="back">← ' + C.back + "</button>";
+    var restartBtn = '<button type="button" class="btn btn-gray" data-act="restart">' + C.restart + "</button>";
+    var nextBtn = multi ? '<button type="button" class="btn btn-primary" data-act="next"' + ((sel && sel.length) ? "" : " disabled") + ">" + C.next + "</button>" : "";
+    if (history.length || multi){
+      html += '<div class="nav">' + (history.length ? backBtn : "<span></span>") +
+        '<div class="nav-right">' + (history.length ? restartBtn : "") + nextBtn + "</div></div>";
+    }
     app.innerHTML = html;
     var h = app.querySelector(".q-title");
     if (h && started) h.focus({ preventScroll: true });
@@ -505,7 +510,7 @@ var QUESTIONS = [
       html += "</section>";
     }
     if (notes.length) html += '<ul class="notes">' + notes.map(function(n){ return "<li>" + n + "</li>"; }).join("") + "</ul>";
-    html += '<div class="nav"><button type="button" class="btn btn-ghost" data-act="back">← ' + C.back + '</button><button type="button" class="btn btn-primary" data-act="restart">' + C.restart + "</button></div>";
+    html += '<div class="nav"><button type="button" class="btn btn-primary" data-act="back">← ' + C.back + '</button><div class="nav-right"><button type="button" class="btn btn-gray" data-act="restart">' + C.restart + "</button></div></div>";
     html += '<p class="fine">' + C.fine + "</p>";
     app.innerHTML = html;
     app.querySelector(".q-title").focus({ preventScroll: true });
