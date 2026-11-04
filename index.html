@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Taskrabbit moving calculator v4: Start Over on every step + per-job task descriptions -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -131,7 +132,12 @@ button{font:inherit;color:inherit}
    CONFIG — everything you'll want to edit lives here.
    ========================================================= */
 var CONFIG = {
+  version: "4",
   defaultMarket: "en-US",
+  // Autofill: if the booking flow accepts a URL parameter for the task description,
+  // put its name here (e.g. "description") and every Book a Tasker link will carry
+  // that job's description. Leave empty until product/engineering confirm the name.
+  prefillParam: "",
   // Default UTMs; any of these can be overridden from the iframe src,
   // e.g. ?utm_campaign=moving_guide_2026
   utm: { utm_source: "taskrabbit_blog", utm_medium: "embedded_tool", utm_campaign: "moving_calculator" },
@@ -303,11 +309,12 @@ var QUESTIONS = [
   function opt(q, id){ return q.options.filter(function(o){ return o.id === id; })[0]; }
   function chosen(q){ var a = answers[q.id]; if (a == null) return []; return (Array.isArray(a) ? a : [a]).map(function(id){ return opt(q, id); }).filter(Boolean); }
 
-  function link(catKey, slot){
+  function link(catKey, slot, text){
     var cat = M.categories[catKey];
     var u = new URL(cat.path, M.base);
     Object.keys(CONFIG.utm).forEach(function(k){ u.searchParams.set(k, params.get(k) || CONFIG.utm[k]); });
     u.searchParams.set("utm_content", slot + "_" + catKey);
+    if (CONFIG.prefillParam && text) u.searchParams.set(CONFIG.prefillParam, text);
     return u.toString();
   }
 
@@ -486,13 +493,13 @@ var QUESTIONS = [
     html += '<p class="r-intro">' + C.resultsHow + "</p>";
     html += '<section class="match"><span class="match-tag">' + C.bestMatch + "</span><h3>" + esc(P.name) + "</h3><p>" + esc(P.blurb) + "</p>";
     if (hrs) html += '<div class="est"><strong>About ' + range(hrs) + "</strong><span>" + C.oneTasker + "</span></div>";
-    html += descBlock(primary, true, '<a class="btn btn-light" target="_top" rel="noopener" data-cat="' + primary + '" data-slot="primary" href="' + link(primary, "primary") + '">' + C.cta + "</a>");
+    html += descBlock(primary, true, '<a class="btn btn-light" target="_top" rel="noopener" data-cat="' + primary + '" data-slot="primary" href="' + link(primary, "primary", describe(primary)) + '">' + C.cta + "</a>");
     html += "</section>";
     if (addons.length){
       html += '<section class="addons"><h4>' + C.addonsTitle + "</h4>";
       addons.forEach(function(r){
         var c = M.categories[r.key];
-        html += '<div class="addon"><div class="addon-row"><div><b>' + esc(c.name) + "</b><small>" + esc(c.blurb) + '</small></div><a target="_top" rel="noopener" data-cat="' + r.key + '" data-slot="addon" href="' + link(r.key, "addon") + '">' + C.seeTaskers + "</a></div>" +
+        html += '<div class="addon"><div class="addon-row"><div><b>' + esc(c.name) + "</b><small>" + esc(c.blurb) + '</small></div><a target="_top" rel="noopener" data-cat="' + r.key + '" data-slot="addon" href="' + link(r.key, "addon", describe(r.key)) + '">' + C.seeTaskers + "</a></div>" +
           "<details><summary>" + C.seeDesc + "</summary>" + descBlock(r.key, false) + "</details></div>";
       });
       html += "</section>";
@@ -528,6 +535,14 @@ var QUESTIONS = [
     if (b.dataset.copy) return copyDesc(b);
     if (b.dataset.cat) track("result_click", { market: marketKey, category: b.dataset.cat, slot: b.dataset.slot });
   });
+
+  app.addEventListener("input", function(e){
+    if (!CONFIG.prefillParam || e.target.tagName !== "TEXTAREA") return;
+    var btn = app.querySelector('[data-copy="' + e.target.id + '"]'); if (!btn) return;
+    var key = btn.dataset.cat;
+    app.querySelectorAll('a[data-cat="' + key + '"]').forEach(function(a){ a.href = link(key, a.dataset.slot, e.target.value); });
+  });
+  if (window.console) console.log("Taskrabbit moving calculator v" + CONFIG.version);
 
   renderQuestion();
 })();
